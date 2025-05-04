@@ -111,10 +111,8 @@
   const finalScore = document.getElementById('finalScore');
   const highScoreDisplay = document.getElementById('highScoreDisplay');
 
-  let mouseX = canvas.width / 2;
-  let mouseY = canvas.height / 2;
-  let touchX = mouseX;
-  let touchY = mouseY;
+  let touchX = canvas.width / 2;
+  let touchY = canvas.height / 2;
   let ship, bullets, rocks, score, shootInterval;
   let gameRunning = false;
   let highScore = 0;
@@ -127,14 +125,14 @@
 
   class Ship {
     constructor() {
-      this.x = mouseX;
-      this.y = mouseY;
+      this.x = touchX;
+      this.y = touchY;
       this.size = 30;
     }
 
     update() {
-      this.x = Math.max(Math.min(mouseX, canvas.width - this.size), this.size);
-      this.y = Math.max(Math.min(mouseY, canvas.height - this.size), this.size);
+      this.x = Math.max(Math.min(touchX, canvas.width - this.size), this.size);
+      this.y = Math.max(Math.min(touchY, canvas.height - this.size), this.size);
     }
 
     draw() {
@@ -201,13 +199,13 @@
   function gameLoop() {
     if (!gameRunning) return;
 
-    // Always update mouse position to touch position for mobile
-    mouseX = touchX;
-    mouseY = touchY;
+    // Update touch position
+    touchX = touchX;
+    touchY = touchY;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Optional: Draw background image
+    // Draw background image
     if (bgLoaded) {
       ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
     } else {
@@ -274,12 +272,6 @@
     gameOverMenu.style.display = 'flex';
     finalScore.textContent = "Final Score: " + score;
   }
-
-  // Mouse Event for Desktop Control
-  canvas.addEventListener('mousemove', (e) => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
-  });
 
   // Touch Events for Mobile Control
   canvas.addEventListener('touchstart', (e) => {
