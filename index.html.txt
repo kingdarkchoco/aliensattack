@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Alien Ship vs Rocks</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let mouseX = canvas.width / 2;
+let mouseY = canvas.height / 2;
+
+class Ship {
+  constructor() {
+    this.x = mouseX;
+    this.y = mouseY;
+    this.size = 30;
+  }
+
+  update() {
+    this.x = mouseX;
+    this.y = mouseY;
+  }
+
+  draw() {
+    ctx.fillStyle = 'lime';
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y - this.size);
+    ctx.lineTo(this.x - this.size, this.y + this.size);
+    ctx.lineTo(this.x + this.size, this.y + this.size);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+class Bullet {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.speed = 7;
+    this.size = 5;
+  }
+
+  update() {
+    this.y -= this.speed;
+  }
+
+  draw() {
+    ctx.fillStyle = 'cyan';
+    ctx.fillRect(this.x - this.size/2, this.y, this.size, 10);
+  }
+}
+
+class Rock {
+  constructor() {
+    this.x = Math.random() * canvas.width;
+    this.y = -50;
+    this.radius = 30 + Math.random() * 20;
+    this.speed = 1 + Math.random() * 2;
+  }
+
+  update() {
+    this.y += this.speed;
+  }
+
+  draw() {
+    ctx.fillStyle = 'gray';
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+let ship = new Ship();
+let bullets = [];
+let rocks = [];
+let score = 0;
+
+let shootInterval = 0;
+
+function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+
+  ship.update();
+  ship.draw();
+
+  // Shoot bullets
+  shootInterval++;
+  if (shootInterval % 15 === 0) {
+    bullets.push(new Bullet(ship.x, ship.y - 20));
+  }
+
+  bullets.forEach((b, i) => {
+    b.update();
+    b.draw();
+    if (b.y < 0) bullets.splice(i, 1);
+  });
+
+  if (Math.random() < 0.02) {
+    rocks.push(new Rock());
+  }
+
+  rocks.forEach((r, ri) => {
+    r.update();
+    r.draw();
+
+    // Collision with bullets
+    bullets.forEach((b, bi) => {
+      let dx = r.x - b.x;
+      let dy = r.y - b.y;
+      let distance = Math.sqrt(dx * dx + dy * dy);
+      if (distance < r.radius) {
+        rocks.splice(ri, 1);
+        bullets.splice(bi, 1);
+        score += 10; // Increase score when rock is hit
+      }
+    });
+
+    // If rock goes off screen
+    if (r.y > canvas.height) {
+      rocks.splice(ri, 1);
+    }
+  });
+
+  // Draw score
+  ctx.fillStyle = 'white';
+  ctx.font = '24px Arial';
+  ctx.fillText('Score: ' + score, 20, 30);
+
+  requestAnimationFrame(gameLoop);
+}
+
+canvas.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+});
+
+const background = new Image();
+background.src = 'assets/background.jpg'; // Load background image
+
+background.onload = () => {
+  gameLoop();
+};
+
+</script>
+</body>
+</html>
