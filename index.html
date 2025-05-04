@@ -275,6 +275,9 @@
       }
     });
 
+    scoreDisplay.textContent = "Score: " + score; // Ensure it's updated in each frame
+    highScoreDisplay.textContent = "High Score: " + highScore; // Ensure it's updated
+
     requestAnimationFrame(gameLoop);
   }
 
