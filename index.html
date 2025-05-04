@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Alien Ship vs Rocks</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     * {
       margin: 0;
@@ -17,7 +18,6 @@
       background: white;
       font-family: Arial, sans-serif;
       color: black;
-      position: relative;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -26,7 +26,8 @@
     #game {
       background-color: black;
       display: block;
-      position: relative;
+      max-width: 100vw;
+      max-height: 100vh;
     }
 
     .overlay {
@@ -72,8 +73,8 @@
     }
 
     #levelDisplay {
-      left: 50%;
-      transform: translateX(-50%);
+      top: 60px;
+      left: 20px;
     }
   </style>
 </head>
@@ -100,14 +101,13 @@
 <script>
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
-  const canvasWidth = 800;
-  const canvasHeight = 600;
 
   function resizeCanvas() {
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
   }
 
+  window.addEventListener('resize', resizeCanvas);
   resizeCanvas();
 
   const startMenu = document.getElementById('startMenu');
@@ -115,9 +115,9 @@
   const startButton = document.getElementById('startButton');
   const restartButton = document.getElementById('restartButton');
   const scoreDisplay = document.getElementById('scoreDisplay');
-  const finalScore = document.getElementById('finalScore');
   const highScoreDisplay = document.getElementById('highScoreDisplay');
   const levelDisplay = document.getElementById('levelDisplay');
+  const finalScore = document.getElementById('finalScore');
 
   let mouseX = canvas.width / 2;
   let mouseY = canvas.height / 2;
@@ -175,7 +175,7 @@
     constructor() {
       this.x = Math.random() * canvas.width;
       this.y = -50;
-      this.radius = 20 + Math.random() * 15;
+      this.radius = 30 + Math.random() * 20;
       this.speed = 1 + Math.random() * 2 + level * 0.3;
 
       const colors = ['gray', 'red', 'blue', 'yellow', 'green', 'orange', 'purple'];
@@ -202,9 +202,9 @@
     level = 1;
     nextLevelScore = 500;
     shootInterval = 0;
-    gameRunning = true;
     scoreDisplay.textContent = "Score: 0";
     levelDisplay.textContent = "Level: 1";
+    gameRunning = true;
     gameLoop();
   }
 
@@ -230,6 +230,7 @@
 
     ship.update();
     ship.draw();
+
     checkLevelUp();
 
     shootInterval++;
@@ -252,20 +253,22 @@
       r.draw();
 
       bullets.forEach((b, bi) => {
-        const dx = r.x - b.x;
-        const dy = r.y - b.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
+        let dx = r.x - b.x;
+        let dy = r.y - b.y;
+        let distance = Math.sqrt(dx * dx + dy * dy);
         if (distance < r.radius) {
-          score += (r.radius < 30 ? 10 : 20);
+          const basePoints = r.radius <= 40 ? 10 : 20;
+          const points = basePoints + level * 2;
+          score += points;
           scoreDisplay.textContent = "Score: " + score;
           rocks.splice(ri, 1);
           bullets.splice(bi, 1);
         }
       });
 
-      const dx = r.x - ship.x;
-      const dy = r.y - ship.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
+      let dx = r.x - ship.x;
+      let dy = r.y - ship.y;
+      let distance = Math.sqrt(dx * dx + dy * dy);
       if (distance < r.radius + ship.size) {
         gameOver();
       }
@@ -275,8 +278,8 @@
       }
     });
 
-    scoreDisplay.textContent = "Score: " + score; // Ensure it's updated in each frame
-    highScoreDisplay.textContent = "High Score: " + highScore; // Ensure it's updated
+    scoreDisplay.textContent = "Score: " + score; // Ensure it's updated continuously
+    highScoreDisplay.textContent = "High Score: " + highScore; // Ensure it's updated continuously
 
     requestAnimationFrame(gameLoop);
   }
@@ -291,9 +294,16 @@
     finalScore.textContent = "Final Score: " + score;
   }
 
+  // Touch and Mouse Controls
   canvas.addEventListener('mousemove', (e) => {
-    mouseX = e.clientX - canvas.offsetLeft;
-    mouseY = e.clientY - canvas.offsetTop;
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+  });
+
+  canvas.addEventListener('touchmove', (e) => {
+    const touch = e.touches[0];
+    mouseX = touch.clientX;
+    mouseY = touch.clientY;
   });
 
   startButton.addEventListener('click', () => {
@@ -307,5 +317,6 @@
     initGame();
   });
 </script>
+
 </body>
 </html>
