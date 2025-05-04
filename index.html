@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Alien Ship vs Rocks</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     * {
       margin: 0;
@@ -18,15 +18,16 @@
       background: white;
       font-family: Arial, sans-serif;
       color: black;
-      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
     #game {
       background-color: black;
       display: block;
-      position: absolute;
-      top: 0;
-      left: 0;
+      max-width: 100vw;
+      max-height: 100vh;
     }
 
     .overlay {
@@ -55,7 +56,7 @@
       margin-top: 20px;
     }
 
-    #scoreDisplay, #highScoreDisplay {
+    #scoreDisplay, #highScoreDisplay, #levelDisplay {
       position: absolute;
       top: 20px;
       font-size: 1.5em;
@@ -69,6 +70,11 @@
 
     #highScoreDisplay {
       right: 20px;
+    }
+
+    #levelDisplay {
+      top: 60px;
+      left: 20px;
     }
   </style>
 </head>
@@ -89,6 +95,7 @@
 
 <div id="scoreDisplay">Score: 0</div>
 <div id="highScoreDisplay">High Score: 0</div>
+<div id="levelDisplay">Level: 1</div>
 <canvas id="game"></canvas>
 
 <script>
@@ -108,12 +115,13 @@
   const startButton = document.getElementById('startButton');
   const restartButton = document.getElementById('restartButton');
   const scoreDisplay = document.getElementById('scoreDisplay');
-  const finalScore = document.getElementById('finalScore');
   const highScoreDisplay = document.getElementById('highScoreDisplay');
+  const levelDisplay = document.getElementById('levelDisplay');
+  const finalScore = document.getElementById('finalScore');
 
-  let touchX = canvas.width / 2;
-  let touchY = canvas.height / 2;
-  let ship, bullets, rocks, score, shootInterval;
+  let mouseX = canvas.width / 2;
+  let mouseY = canvas.height / 2;
+  let ship, bullets, rocks, score, shootInterval, level, nextLevelScore;
   let gameRunning = false;
   let highScore = 0;
 
@@ -121,18 +129,17 @@
   background.src = 'assets/background.jpg';
   let bgLoaded = false;
   background.onload = () => { bgLoaded = true; };
-  background.onerror = () => { console.warn("Background image failed to load."); };
 
   class Ship {
     constructor() {
-      this.x = touchX;
-      this.y = touchY;
+      this.x = mouseX;
+      this.y = mouseY;
       this.size = 30;
     }
 
     update() {
-      this.x = Math.max(Math.min(touchX, canvas.width - this.size), this.size);
-      this.y = Math.max(Math.min(touchY, canvas.height - this.size), this.size);
+      this.x = mouseX;
+      this.y = mouseY;
     }
 
     draw() {
@@ -169,7 +176,10 @@
       this.x = Math.random() * canvas.width;
       this.y = -50;
       this.radius = 30 + Math.random() * 20;
-      this.speed = 1 + Math.random() * 2;
+      this.speed = 1 + Math.random() * 2 + level * 0.3;
+
+      const colors = ['gray', 'red', 'blue', 'yellow', 'green', 'orange', 'purple'];
+      this.color = colors[Math.min(level - 1, colors.length - 1)];
     }
 
     update() {
@@ -177,8 +187,7 @@
     }
 
     draw() {
-      const rockColor = this.radius <= 40 ? 'gray' : 'darkgray';
-      ctx.fillStyle = rockColor;
+      ctx.fillStyle = this.color;
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
       ctx.fill();
@@ -190,22 +199,28 @@
     bullets = [];
     rocks = [];
     score = 0;
+    level = 1;
+    nextLevelScore = 500;
     shootInterval = 0;
     scoreDisplay.textContent = "Score: 0";
+    levelDisplay.textContent = "Level: 1";
     gameRunning = true;
     gameLoop();
+  }
+
+  function checkLevelUp() {
+    if (score >= nextLevelScore) {
+      level++;
+      nextLevelScore += 500;
+      levelDisplay.textContent = "Level: " + level;
+    }
   }
 
   function gameLoop() {
     if (!gameRunning) return;
 
-    // Update touch position
-    touchX = touchX;
-    touchY = touchY;
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw background image
     if (bgLoaded) {
       ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
     } else {
@@ -215,6 +230,8 @@
 
     ship.update();
     ship.draw();
+
+    checkLevelUp();
 
     shootInterval++;
     if (shootInterval % 15 === 0) {
@@ -240,7 +257,8 @@
         let dy = r.y - b.y;
         let distance = Math.sqrt(dx * dx + dy * dy);
         if (distance < r.radius) {
-          const points = r.radius <= 40 ? 10 : 20;
+          const basePoints = r.radius <= 40 ? 10 : 20;
+          const points = basePoints + level * 2;
           score += points;
           scoreDisplay.textContent = "Score: " + score;
           rocks.splice(ri, 1);
@@ -273,20 +291,17 @@
     finalScore.textContent = "Final Score: " + score;
   }
 
-  // Touch Events for Mobile Control
-  canvas.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    const touch = e.touches[0];
-    touchX = touch.clientX;
-    touchY = touch.clientY;
-  }, { passive: false });
+  // Touch and Mouse Controls
+  canvas.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+  });
 
   canvas.addEventListener('touchmove', (e) => {
-    e.preventDefault();
     const touch = e.touches[0];
-    touchX = touch.clientX;
-    touchY = touch.clientY;
-  }, { passive: false });
+    mouseX = touch.clientX;
+    mouseY = touch.clientY;
+  });
 
   startButton.addEventListener('click', () => {
     startMenu.style.display = 'none';
