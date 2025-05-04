@@ -172,11 +172,13 @@
   }
 
   class Rock {
-    constructor() {
+    constructor(isBig = false) {
+      this.isBig = isBig;
       this.x = Math.random() * canvas.width;
       this.y = -50;
-      this.radius = 30 + Math.random() * 20;
-      this.speed = 1 + Math.random() * 2 + level * 0.3;
+      this.radius = this.isBig ? 50 + Math.random() * 30 : 20 + Math.random() * 15; // Big rocks are much bigger
+      this.hitsLeft = this.isBig ? 3 : 1; // Big rocks take multiple hits
+      this.speed = this.isBig ? 1 + Math.random() * 1.5 : 1 + Math.random() * 2 + level * 0.3; // Big rocks move slower
 
       const colors = ['gray', 'red', 'blue', 'yellow', 'green', 'orange', 'purple'];
       this.color = colors[Math.min(level - 1, colors.length - 1)];
@@ -191,6 +193,14 @@
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
       ctx.fill();
+    }
+
+    hit() {
+      this.hitsLeft--;
+      if (this.hitsLeft <= 0) {
+        return true; // Rock is destroyed
+      }
+      return false; // Rock still survives
     }
   }
 
@@ -245,31 +255,44 @@
     });
 
     if (Math.random() < 0.02) {
-      rocks.push(new Rock());
+      const isBigRock = Math.random() < 0.1; // 10% chance for big rocks
+      rocks.push(new Rock(isBigRock));
     }
 
     rocks.forEach((r, ri) => {
       r.update();
       r.draw();
 
+      // Check for collisions with bullets
       bullets.forEach((b, bi) => {
         let dx = r.x - b.x;
         let dy = r.y - b.y;
         let distance = Math.sqrt(dx * dx + dy * dy);
         if (distance < r.radius) {
-          const basePoints = r.radius <= 40 ? 10 : 20;
-          const points = basePoints + level * 2;
-          score += points;
-          scoreDisplay.textContent = "Score: " + score;
-          rocks.splice(ri, 1);
-          bullets.splice(bi, 1);
+          if (r.hit()) {
+            // Big rock hit and destroyed
+            score += 30 + level * 5;
+            scoreDisplay.textContent = "Score: " + score;
+            rocks.splice(ri, 1);
+          } else {
+            // Big rock still survives
+            score += 10 + level * 2;
+            scoreDisplay.textContent = "Score: " + score;
+            bullets.splice(bi, 1);
+          }
         }
       });
 
+      // Check for collision with ship
       let dx = r.x - ship.x;
       let dy = r.y - ship.y;
       let distance = Math.sqrt(dx * dx + dy * dy);
       if (distance < r.radius + ship.size) {
+        gameOver();
+      }
+
+      // Game over if the rock touches the bottom of the screen
+      if (r.y + r.radius > canvas.height) {
         gameOver();
       }
 
@@ -278,8 +301,8 @@
       }
     });
 
-    scoreDisplay.textContent = "Score: " + score; // Ensure it's updated continuously
-    highScoreDisplay.textContent = "High Score: " + highScore; // Ensure it's updated continuously
+    scoreDisplay.textContent = "Score: " + score;
+    highScoreDisplay.textContent = "High Score: " + highScore;
 
     requestAnimationFrame(gameLoop);
   }
